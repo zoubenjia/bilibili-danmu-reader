@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.3
+// @version      0.8.4
 // @description  在B站自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
