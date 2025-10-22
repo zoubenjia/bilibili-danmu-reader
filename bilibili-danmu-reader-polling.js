@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.7
+// @version      0.8.8
 // @description  在B站自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
@@ -25,11 +25,14 @@
     maxHistorySize: 100,
     smartFilter: true,      // 智能过滤开关
     autoSpeedUp: true,      // 自动加速开关
+    repeatFilter: true,     // 重复内容过滤开关
     userBaseRate: 1,        // 用户设定的基础语速（不被自动加速覆盖）
   };
 
   let lastSpokenTexts = {};
   let spokenCount = 0;
+  let repeatFilteredCount = 0;  // 被重复过滤掉的弹幕数
+  let recentTexts = [];  // 最近读过的弹幕列表，用于检测重复
   let synth = window.speechSynthesis;
   let processedTexts = new Set();  // 改为记录文本而不是元素引用
   let speakQueue = [];
@@ -47,6 +50,28 @@
 
     // 设置上下限：最小2字，最多10字
     return Math.min(Math.max(minLen, 2), 10);
+  }
+
+  // 检查是否是重复的弹幕
+  function isRepeatedText(text) {
+    if (!CONFIG.repeatFilter) return false;
+
+    // 检查最近的弹幕列表中是否有完全相同的
+    if (recentTexts.includes(text)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // 添加弹幕到最近列表
+  function addToRecentTexts(text) {
+    recentTexts.push(text);
+
+    // 只保留最近 50 条
+    if (recentTexts.length > 50) {
+      recentTexts.shift();
+    }
   }
 
   // 智能过滤：根据队列长度判断是否应该过滤这条弹幕
@@ -157,10 +182,19 @@
       return;
     }
 
+    // 重复过滤：检查是否是最近重复的弹幕
+    if (isRepeatedText(text)) {
+      repeatFilteredCount++;
+      return;
+    }
+
     // 智能过滤：如果队列很长，过滤短弹幕
     if (shouldFilterByLength(text)) {
       return;
     }
+
+    // 添加到最近列表
+    addToRecentTexts(text);
 
     speakQueue.push(text);
     processQueue();
@@ -269,7 +303,7 @@
       cursor: move;
       user-select: none;
     `;
-    title.innerHTML = '🎤 读弹幕 v0.8.7';
+    title.innerHTML = '🎤 读弹幕 v0.8.8';
 
     // 添加拖拽功能
     let isDragging = false;
@@ -414,6 +448,29 @@
       GM_setValue('duanmu_reader_autoSpeedUp', CONFIG.autoSpeedUp);
     };
 
+    // 重复过滤开关
+    let repeatFilterBtn = document.createElement('button');
+    repeatFilterBtn.style.cssText = `
+      width: 100%;
+      padding: 6px 12px;
+      margin-bottom: 6px;
+      border: none;
+      border-radius: 6px;
+      background: ${CONFIG.repeatFilter ? '#ec4899' : '#9ca3af'};
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+    `;
+    repeatFilterBtn.textContent = CONFIG.repeatFilter ? '🔄 去重: ON' : '🔄 去重: OFF';
+    repeatFilterBtn.onclick = () => {
+      CONFIG.repeatFilter = !CONFIG.repeatFilter;
+      repeatFilterBtn.textContent = CONFIG.repeatFilter ? '🔄 去重: ON' : '🔄 去重: OFF';
+      repeatFilterBtn.style.background = CONFIG.repeatFilter ? '#ec4899' : '#9ca3af';
+      GM_setValue('duanmu_reader_repeatFilter', CONFIG.repeatFilter);
+    };
+
     let hint = document.createElement('div');
     hint.style.cssText = `
       font-size: 11px;
@@ -433,6 +490,7 @@
     panel.appendChild(volumeSlider);
     panel.appendChild(smartFilterBtn);
     panel.appendChild(autoSpeedBtn);
+    panel.appendChild(repeatFilterBtn);
     panel.appendChild(hint);
 
     document.body.appendChild(panel);
@@ -448,6 +506,7 @@
     volumeSlider.style.display = 'none';
     smartFilterBtn.style.display = 'none';
     autoSpeedBtn.style.display = 'none';
+    repeatFilterBtn.style.display = 'none';
     hint.style.display = 'none';
     title.style.marginBottom = '0';
 
@@ -461,6 +520,7 @@
       volumeSlider.style.display = isCollapsed ? 'none' : 'block';
       smartFilterBtn.style.display = isCollapsed ? 'none' : 'block';
       autoSpeedBtn.style.display = isCollapsed ? 'none' : 'block';
+      repeatFilterBtn.style.display = isCollapsed ? 'none' : 'block';
       hint.style.display = isCollapsed ? 'none' : 'block';
       title.style.marginBottom = isCollapsed ? '0' : '8px';
       // 收起时变窄，展开时恢复宽度
@@ -505,6 +565,7 @@
       CONFIG.volume = parseFloat(GM_getValue('duanmu_reader_volume', 1));
       CONFIG.smartFilter = GM_getValue('duanmu_reader_smartFilter', true);
       CONFIG.autoSpeedUp = GM_getValue('duanmu_reader_autoSpeedUp', true);
+      CONFIG.repeatFilter = GM_getValue('duanmu_reader_repeatFilter', true);
     }
   }
 
