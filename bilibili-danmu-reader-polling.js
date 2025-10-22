@@ -228,8 +228,23 @@
     processQueue();
   }
 
+  function isVideoPaused() {
+    // 检查视频播放器是否暂停
+    const video = document.querySelector('video');
+    if (video && video.paused) {
+      return true;
+    }
+    return false;
+  }
+
   function processQueue() {
     if (isProcessingQueue || speakQueue.length === 0) {
+      return;
+    }
+
+    // 如果视频暂停，暂停读弹幕
+    if (isVideoPaused()) {
+      setTimeout(processQueue, 500);
       return;
     }
 
