@@ -138,6 +138,7 @@
       '.bili-live-chat-item',
       '.danmaku-item',
       '.bili-danmaku-item',
+      'li[class*="item"]',        // 支持某些直播间的li标签结构
       '[class*="danmaku"]',
     ];
 
