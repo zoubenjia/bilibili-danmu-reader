@@ -600,7 +600,7 @@
 
   function setupKeyboardShortcut() {
     document.addEventListener('keydown', (e) => {
-      if (e.altKey && e.key.toUpperCase() === 'R') {
+      if (e.ctrlKey && e.key.toUpperCase() === 'D') {
         e.preventDefault();
         CONFIG.enabled = !CONFIG.enabled;
         let btn = document.querySelector('#duanmu-reader-panel button');
