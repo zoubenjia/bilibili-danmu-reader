@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.8
+// @version      0.8.9
 // @description  在B站自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
@@ -26,6 +26,7 @@
     smartFilter: true,      // 智能过滤开关
     autoSpeedUp: true,      // 自动加速开关
     repeatFilter: true,     // 重复内容过滤开关
+    nonsenseFilter: true,   // 无意义弹幕过滤开关（纯重复字符）
     userBaseRate: 1,        // 用户设定的基础语速（不被自动加速覆盖）
   };
 
@@ -50,6 +51,26 @@
 
     // 设置上下限：最小2字，最多10字
     return Math.min(Math.max(minLen, 2), 10);
+  }
+
+  // 检查是否是无意义的弹幕（纯重复字符）
+  function isNonsenseText(text) {
+    if (!CONFIG.nonsenseFilter) return false;
+
+    // 长度过短的纯重复不过滤（可能是真实内容）
+    if (text.length < 3) {
+      return false;
+    }
+
+    // 检查是否只由一个字符重复组成
+    const firstChar = text[0];
+    const isAllSameChar = text.split('').every(char => char === firstChar);
+
+    if (isAllSameChar) {
+      return true; // 都是同一个字符，无意义
+    }
+
+    return false;
   }
 
   // 检查是否是重复的弹幕
@@ -182,6 +203,11 @@
       return;
     }
 
+    // 无意义过滤：过滤纯重复字符的弹幕（如"哈哈哈""666"等）
+    if (isNonsenseText(text)) {
+      return;
+    }
+
     // 重复过滤：检查是否是最近重复的弹幕
     if (isRepeatedText(text)) {
       repeatFilteredCount++;
@@ -303,7 +329,7 @@
       cursor: move;
       user-select: none;
     `;
-    title.innerHTML = '🎤 读弹幕 v0.8.8';
+    title.innerHTML = '🎤 读弹幕 v0.8.9';
 
     // 添加拖拽功能
     let isDragging = false;
@@ -471,6 +497,29 @@
       GM_setValue('duanmu_reader_repeatFilter', CONFIG.repeatFilter);
     };
 
+    // 无意义弹幕过滤开关
+    let nonsenseFilterBtn = document.createElement('button');
+    nonsenseFilterBtn.style.cssText = `
+      width: 100%;
+      padding: 6px 12px;
+      margin-bottom: 6px;
+      border: none;
+      border-radius: 6px;
+      background: ${CONFIG.nonsenseFilter ? '#f59e0b' : '#9ca3af'};
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+    `;
+    nonsenseFilterBtn.textContent = CONFIG.nonsenseFilter ? '🚫 净化: ON' : '🚫 净化: OFF';
+    nonsenseFilterBtn.onclick = () => {
+      CONFIG.nonsenseFilter = !CONFIG.nonsenseFilter;
+      nonsenseFilterBtn.textContent = CONFIG.nonsenseFilter ? '🚫 净化: ON' : '🚫 净化: OFF';
+      nonsenseFilterBtn.style.background = CONFIG.nonsenseFilter ? '#f59e0b' : '#9ca3af';
+      GM_setValue('duanmu_reader_nonsenseFilter', CONFIG.nonsenseFilter);
+    };
+
     let hint = document.createElement('div');
     hint.style.cssText = `
       font-size: 11px;
@@ -491,6 +540,7 @@
     panel.appendChild(smartFilterBtn);
     panel.appendChild(autoSpeedBtn);
     panel.appendChild(repeatFilterBtn);
+    panel.appendChild(nonsenseFilterBtn);
     panel.appendChild(hint);
 
     document.body.appendChild(panel);
@@ -507,6 +557,7 @@
     smartFilterBtn.style.display = 'none';
     autoSpeedBtn.style.display = 'none';
     repeatFilterBtn.style.display = 'none';
+    nonsenseFilterBtn.style.display = 'none';
     hint.style.display = 'none';
     title.style.marginBottom = '0';
 
@@ -521,6 +572,7 @@
       smartFilterBtn.style.display = isCollapsed ? 'none' : 'block';
       autoSpeedBtn.style.display = isCollapsed ? 'none' : 'block';
       repeatFilterBtn.style.display = isCollapsed ? 'none' : 'block';
+      nonsenseFilterBtn.style.display = isCollapsed ? 'none' : 'block';
       hint.style.display = isCollapsed ? 'none' : 'block';
       title.style.marginBottom = isCollapsed ? '0' : '8px';
       // 收起时变窄，展开时恢复宽度
@@ -566,6 +618,7 @@
       CONFIG.smartFilter = GM_getValue('duanmu_reader_smartFilter', true);
       CONFIG.autoSpeedUp = GM_getValue('duanmu_reader_autoSpeedUp', true);
       CONFIG.repeatFilter = GM_getValue('duanmu_reader_repeatFilter', true);
+      CONFIG.nonsenseFilter = GM_getValue('duanmu_reader_nonsenseFilter', true);
     }
   }
 
