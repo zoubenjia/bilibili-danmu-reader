@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.9
-// @description  在B站自动用语音读出弹幕内容（轮询版本）
+// @version      0.9.0
+// @description  在B站视频/直播自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
 // @match        https://www.bilibili.com/video/*
+// @match        https://live.bilibili.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @run-at       document-end
@@ -329,7 +330,7 @@
       cursor: move;
       user-select: none;
     `;
-    title.innerHTML = '🎤 读弹幕 v0.8.9';
+    title.innerHTML = '🎤 读弹幕 v0.9.0';
 
     // 添加拖拽功能
     let isDragging = false;
@@ -623,7 +624,7 @@
   }
 
   function init() {
-    console.log('[读弹幕] 脚本已加载 v0.8.0 - 轮询模式（不依赖MutationObserver）');
+    console.log('[读弹幕] 脚本已加载 v0.9.0 - 轮询模式（不依赖MutationObserver）');
 
     if (!('speechSynthesis' in window)) {
       console.error('[读弹幕] 浏览器不支持 Web Speech API');
