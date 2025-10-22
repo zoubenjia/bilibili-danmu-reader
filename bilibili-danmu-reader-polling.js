@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.6
+// @version      0.8.7
 // @description  在B站自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
@@ -37,22 +37,32 @@
 
   // ============== 工具函数 ==============
 
+  // 动态计算最小过滤长度：根据队列长度智能调整
+  function getMinFilterLength() {
+    const queueLen = speakQueue.length;
+
+    // 动态公式：队列越长，过滤长度越大
+    // 基础长度 2 + (队列长度 / 5)，确保随着队列增长而逐步提高过滤要求
+    let minLen = 2 + Math.floor(queueLen / 5);
+
+    // 设置上下限：最小2字，最多10字
+    return Math.min(Math.max(minLen, 2), 10);
+  }
+
   // 智能过滤：根据队列长度判断是否应该过滤这条弹幕
   function shouldFilterByLength(text) {
     if (!CONFIG.smartFilter) return false;
 
     const queueLen = speakQueue.length;
 
-    // 多层级过滤
-    if (queueLen >= 12) {
-      return text.length < 5;  // 队列很长时，只读5字以上
-    } else if (queueLen >= 8) {
-      return text.length < 4;  // 队列较长时，只读4字以上
-    } else if (queueLen >= 4) {
-      return text.length < 3;  // 队列开始堆积时，只读3字以上
+    // 队列少于 3 条时不过滤
+    if (queueLen < 3) {
+      return false;
     }
 
-    return false; // 队列少时，不过滤
+    // 动态获取当前应该过滤的最小长度
+    const minLen = getMinFilterLength();
+    return text.length < minLen;
   }
 
   // 自动加速：根据队列长度自动调整语速
@@ -259,7 +269,7 @@
       cursor: move;
       user-select: none;
     `;
-    title.innerHTML = '🎤 读弹幕 v0.8.6';
+    title.innerHTML = '🎤 读弹幕 v0.8.7';
 
     // 添加拖拽功能
     let isDragging = false;
@@ -318,7 +328,7 @@
       text-align: center;
       line-height: 1.6;
     `;
-    statsDiv.innerHTML = `✓已读: <span id="spoken-count">0</span><br/>⏳队列: <span id="queue-count">0</span><br/>📊页面: <span id="danmu-count">0</span>`;
+    statsDiv.innerHTML = `✓已读: <span id="spoken-count">0</span><br/>⏳队列: <span id="queue-count">0</span><br/>📊页面: <span id="danmu-count">0</span><br/>🔍过滤: <span id="filter-length">2</span>字+`;
 
     // 语速调整
     let rateLabel = document.createElement('div');
@@ -461,10 +471,15 @@
       const countEl = document.getElementById('spoken-count');
       const queueEl = document.getElementById('queue-count');
       const danmuEl = document.getElementById('danmu-count');
+      const filterLenEl = document.getElementById('filter-length');
 
       if (countEl) countEl.textContent = spokenCount;
       if (queueEl) queueEl.textContent = speakQueue.length;
       if (danmuEl) danmuEl.textContent = getDanmuElements().length;
+      // 实时显示当前的过滤长度
+      if (filterLenEl && CONFIG.smartFilter) {
+        filterLenEl.textContent = getMinFilterLength();
+      }
     }, 500);
   }
 
