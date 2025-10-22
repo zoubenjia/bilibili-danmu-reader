@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.5
+// @version      0.8.6
 // @description  在B站自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
@@ -23,6 +23,9 @@
     volume: 1,
     deduplicateTime: 500,
     maxHistorySize: 100,
+    smartFilter: true,      // 智能过滤开关
+    autoSpeedUp: true,      // 自动加速开关
+    userBaseRate: 1,        // 用户设定的基础语速（不被自动加速覆盖）
   };
 
   let lastSpokenTexts = {};
@@ -33,6 +36,44 @@
   let isProcessingQueue = false;
 
   // ============== 工具函数 ==============
+
+  // 智能过滤：根据队列长度判断是否应该过滤这条弹幕
+  function shouldFilterByLength(text) {
+    if (!CONFIG.smartFilter) return false;
+
+    const queueLen = speakQueue.length;
+
+    // 多层级过滤
+    if (queueLen >= 12) {
+      return text.length < 5;  // 队列很长时，只读5字以上
+    } else if (queueLen >= 8) {
+      return text.length < 4;  // 队列较长时，只读4字以上
+    } else if (queueLen >= 4) {
+      return text.length < 3;  // 队列开始堆积时，只读3字以上
+    }
+
+    return false; // 队列少时，不过滤
+  }
+
+  // 自动加速：根据队列长度自动调整语速
+  function getAutoSpeed() {
+    if (!CONFIG.autoSpeedUp) {
+      return CONFIG.rate; // 如果关闭自动加速，用用户设定的速度
+    }
+
+    const queueLen = speakQueue.length;
+
+    // 多层级加速
+    if (queueLen >= 12) {
+      return 2.0;   // 队列很长时，加速到2.0x
+    } else if (queueLen >= 8) {
+      return 1.6;   // 队列较长时，加速到1.6x
+    } else if (queueLen >= 4) {
+      return 1.3;   // 队列开始堆积时，加速到1.3x
+    }
+
+    return CONFIG.rate; // 队列少时，用用户设定的速度
+  }
 
   function getDanmuElements() {
     const selectors = [
@@ -106,6 +147,11 @@
       return;
     }
 
+    // 智能过滤：如果队列很长，过滤短弹幕
+    if (shouldFilterByLength(text)) {
+      return;
+    }
+
     speakQueue.push(text);
     processQueue();
   }
@@ -125,7 +171,7 @@
 
     try {
       let utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = CONFIG.rate;
+      utterance.rate = getAutoSpeed();  // 使用自动加速
       utterance.pitch = CONFIG.pitch;
       utterance.volume = CONFIG.volume;
 
@@ -213,7 +259,7 @@
       cursor: move;
       user-select: none;
     `;
-    title.innerHTML = '🎤 读弹幕 v0.8.3';
+    title.innerHTML = '🎤 读弹幕 v0.8.6';
 
     // 添加拖拽功能
     let isDragging = false;
@@ -312,6 +358,52 @@
       GM_setValue('duanmu_reader_volume', CONFIG.volume);
     };
 
+    // 智能过滤开关
+    let smartFilterBtn = document.createElement('button');
+    smartFilterBtn.style.cssText = `
+      width: 100%;
+      padding: 6px 12px;
+      margin-bottom: 6px;
+      border: none;
+      border-radius: 6px;
+      background: ${CONFIG.smartFilter ? '#3b82f6' : '#9ca3af'};
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+    `;
+    smartFilterBtn.textContent = CONFIG.smartFilter ? '🎯 智能过滤: ON' : '🎯 智能过滤: OFF';
+    smartFilterBtn.onclick = () => {
+      CONFIG.smartFilter = !CONFIG.smartFilter;
+      smartFilterBtn.textContent = CONFIG.smartFilter ? '🎯 智能过滤: ON' : '🎯 智能过滤: OFF';
+      smartFilterBtn.style.background = CONFIG.smartFilter ? '#3b82f6' : '#9ca3af';
+      GM_setValue('duanmu_reader_smartFilter', CONFIG.smartFilter);
+    };
+
+    // 自动加速开关
+    let autoSpeedBtn = document.createElement('button');
+    autoSpeedBtn.style.cssText = `
+      width: 100%;
+      padding: 6px 12px;
+      margin-bottom: 6px;
+      border: none;
+      border-radius: 6px;
+      background: ${CONFIG.autoSpeedUp ? '#8b5cf6' : '#9ca3af'};
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+    `;
+    autoSpeedBtn.textContent = CONFIG.autoSpeedUp ? '⚡ 自动加速: ON' : '⚡ 自动加速: OFF';
+    autoSpeedBtn.onclick = () => {
+      CONFIG.autoSpeedUp = !CONFIG.autoSpeedUp;
+      autoSpeedBtn.textContent = CONFIG.autoSpeedUp ? '⚡ 自动加速: ON' : '⚡ 自动加速: OFF';
+      autoSpeedBtn.style.background = CONFIG.autoSpeedUp ? '#8b5cf6' : '#9ca3af';
+      GM_setValue('duanmu_reader_autoSpeedUp', CONFIG.autoSpeedUp);
+    };
+
     let hint = document.createElement('div');
     hint.style.cssText = `
       font-size: 11px;
@@ -329,6 +421,8 @@
     panel.appendChild(rateSlider);
     panel.appendChild(volumeLabel);
     panel.appendChild(volumeSlider);
+    panel.appendChild(smartFilterBtn);
+    panel.appendChild(autoSpeedBtn);
     panel.appendChild(hint);
 
     document.body.appendChild(panel);
@@ -342,6 +436,8 @@
     rateSlider.style.display = 'none';
     volumeLabel.style.display = 'none';
     volumeSlider.style.display = 'none';
+    smartFilterBtn.style.display = 'none';
+    autoSpeedBtn.style.display = 'none';
     hint.style.display = 'none';
     title.style.marginBottom = '0';
 
@@ -353,6 +449,8 @@
       rateSlider.style.display = isCollapsed ? 'none' : 'block';
       volumeLabel.style.display = isCollapsed ? 'none' : 'block';
       volumeSlider.style.display = isCollapsed ? 'none' : 'block';
+      smartFilterBtn.style.display = isCollapsed ? 'none' : 'block';
+      autoSpeedBtn.style.display = isCollapsed ? 'none' : 'block';
       hint.style.display = isCollapsed ? 'none' : 'block';
       title.style.marginBottom = isCollapsed ? '0' : '8px';
       // 收起时变窄，展开时恢复宽度
@@ -390,6 +488,8 @@
       CONFIG.enabled = GM_getValue('duanmu_reader_enabled', true);
       CONFIG.rate = parseFloat(GM_getValue('duanmu_reader_rate', 1));
       CONFIG.volume = parseFloat(GM_getValue('duanmu_reader_volume', 1));
+      CONFIG.smartFilter = GM_getValue('duanmu_reader_smartFilter', true);
+      CONFIG.autoSpeedUp = GM_getValue('duanmu_reader_autoSpeedUp', true);
     }
   }
 
