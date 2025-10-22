@@ -243,6 +243,7 @@
 
     try {
       let utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';        // 设置中文语言
       utterance.rate = getAutoSpeed();  // 使用自动加速
       utterance.pitch = CONFIG.pitch;
       utterance.volume = CONFIG.volume;
