@@ -9,6 +9,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @run-at       document-end
+// @downloadURL  https://raw.githubusercontent.com/zoubenjia/bilibili-danmu-reader/main/bilibili-danmu-reader-polling.js
+// @updateURL    https://raw.githubusercontent.com/zoubenjia/bilibili-danmu-reader/main/bilibili-danmu-reader-polling.js
 // ==/UserScript==
 
 (function() {
