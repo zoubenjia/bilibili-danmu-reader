@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         读弹幕 - B站弹幕语音阅读
 // @namespace    http://tampermonkey.net/
-// @version      0.8.4
+// @version      0.8.5
 // @description  在B站自动用语音读出弹幕内容（轮询版本）
 // @author       Claude
 // @license      MIT
@@ -333,7 +333,18 @@
 
     document.body.appendChild(panel);
 
-    let isCollapsed = false;
+    let isCollapsed = true;
+
+    // 初始化为收起状态
+    toggleBtn.style.display = 'none';
+    statsDiv.style.display = 'none';
+    rateLabel.style.display = 'none';
+    rateSlider.style.display = 'none';
+    volumeLabel.style.display = 'none';
+    volumeSlider.style.display = 'none';
+    hint.style.display = 'none';
+    title.style.marginBottom = '0';
+
     title.ondblclick = () => {
       isCollapsed = !isCollapsed;
       toggleBtn.style.display = isCollapsed ? 'none' : 'block';
