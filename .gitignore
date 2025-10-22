@@ -1,0 +1,51 @@
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# 依赖
+node_modules/
+package-lock.json
+yarn.lock
+
+# 临时文件
+*.tmp
+*.temp
+*.log
+dist/
+build/
+
+# 敏感信息
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# 测试覆盖
+coverage/
+.nyc_output/
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+desktop.ini

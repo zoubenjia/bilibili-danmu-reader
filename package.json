@@ -1,0 +1,25 @@
+{
+  "name": "du-danmu-reader",
+  "version": "0.1.0",
+  "description": "B站弹幕语音阅读工具 - 看视频时自动用语音读出弹幕",
+  "author": "Benjia Zou",
+  "license": "MIT",
+  "scripts": {
+    "dev": "echo 'Open Tampermonkey editor and edit the script directly'",
+    "test": "echo 'No tests yet'",
+    "build": "echo 'No build process needed for Tampermonkey script'"
+  },
+  "keywords": [
+    "bilibili",
+    "danmaku",
+    "speech-synthesis",
+    "tampermonkey",
+    "userscript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/du-danmu-reader"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
