@@ -199,7 +199,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: white;
-      min-width: 220px;
+      width: fit-content;
     `;
 
     let title = document.createElement('div');
@@ -355,6 +355,8 @@
       volumeSlider.style.display = isCollapsed ? 'none' : 'block';
       hint.style.display = isCollapsed ? 'none' : 'block';
       title.style.marginBottom = isCollapsed ? '0' : '8px';
+      // 收起时变窄，展开时恢复宽度
+      panel.style.width = isCollapsed ? 'fit-content' : '220px';
     };
 
     setInterval(() => {
