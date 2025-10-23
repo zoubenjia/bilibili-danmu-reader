@@ -425,6 +425,14 @@
       toggleBtn.textContent = CONFIG.enabled ? '✓ 已启用' : '✗ 已禁用';
       toggleBtn.style.background = CONFIG.enabled ? '#4ade80' : '#ef4444';
       GM_setValue('duanmu_reader_enabled', CONFIG.enabled);
+
+      // 禁用时立刻清空队列并停止朗读
+      if (!CONFIG.enabled) {
+        speakQueue = [];
+        synth.cancel();
+        isProcessingQueue = false;
+        console.log('[读弹幕] 已禁用，清空队列');
+      }
     };
 
     let statsDiv = document.createElement('div');
@@ -655,6 +663,14 @@
           btn.textContent = CONFIG.enabled ? '✓ 已启用' : '✗ 已禁用';
           btn.style.background = CONFIG.enabled ? '#4ade80' : '#ef4444';
         }
+
+        // 禁用时立刻清空队列并停止朗读
+        if (!CONFIG.enabled) {
+          speakQueue = [];
+          synth.cancel();
+          isProcessingQueue = false;
+        }
+
         console.log('[读弹幕]', CONFIG.enabled ? '已启用' : '已禁用');
       }
     });
