@@ -39,6 +39,7 @@
   let processedTexts = new Set();  // 改为记录文本而不是元素引用
   let speakQueue = [];
   let isProcessingQueue = false;
+  let lastVideoTime = 0;  // 上一次检测的视频时间
 
   // ============== 工具函数 ==============
 
@@ -237,6 +238,34 @@
     return false;
   }
 
+  function checkForVideoSeeking() {
+    // 检测快进/快退（时间轴跳变）
+    const video = document.querySelector('video');
+    if (!video) return;
+
+    const currentTime = video.currentTime;
+    const timeDiff = Math.abs(currentTime - lastVideoTime);
+
+    // 如果时间差超过 0.5 秒，认为是快进/快退
+    if (timeDiff > 0.5 && lastVideoTime > 0) {
+      // 清空待读队列，防止读过期弹幕
+      speakQueue = [];
+
+      // 停止当前正在朗读的内容
+      synth.cancel();
+      isProcessingQueue = false;
+
+      // 清空已读记录，允许新位置的弹幕被重新读取
+      lastSpokenTexts = {};
+      recentTexts = [];
+      processedTexts.clear();
+
+      console.log('[读弹幕] 检测到快进/快退，已清空队列');
+    }
+
+    lastVideoTime = currentTime;
+  }
+
   function processQueue() {
     if (isProcessingQueue || speakQueue.length === 0) {
       return;
@@ -295,6 +324,9 @@
    */
   function pollNewDanmu() {
     try {
+      // 每次轮询时检查是否有快进/快退
+      checkForVideoSeeking();
+
       const allDanmu = getDanmuElements();
 
       allDanmu.forEach(element => {
