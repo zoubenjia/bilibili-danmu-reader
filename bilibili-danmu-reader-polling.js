@@ -685,6 +685,21 @@
     createControlPanel();
     setupKeyboardShortcut();
 
+    // 监听页面可见性变化（刷新、切换标签页、锁屏等）
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // 页面重新获得焦点时清空队列
+        speakQueue = [];
+        synth.cancel();
+        isProcessingQueue = false;
+        lastSpokenTexts = {};
+        recentTexts = [];
+        processedTexts.clear();
+        lastVideoTime = 0;
+        console.log('[读弹幕] 页面重新获得焦点，已清空队列');
+      }
+    });
+
     // 启动轮询 - 每 100ms 检查一次新弹幕（加快速度以捕捉快速出现的弹幕）
     setInterval(pollNewDanmu, 100);
 
