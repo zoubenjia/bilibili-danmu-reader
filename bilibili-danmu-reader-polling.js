@@ -165,11 +165,45 @@
     for (let selector of textSelectors) {
       let textEl = element.querySelector(selector);
       if (textEl) {
-        return textEl.textContent.trim();
+        const text = textEl.textContent.trim();
+        // 过滤掉明显的非弹幕内容
+        if (isValidDanmakuText(text)) {
+          return text;
+        }
       }
     }
 
-    return element.textContent.trim();
+    const text = element.textContent.trim();
+    // 过滤掉明显的非弹幕内容
+    if (isValidDanmakuText(text)) {
+      return text;
+    }
+
+    return '';
+  }
+
+  function isValidDanmakuText(text) {
+    // 过滤掉明显不是弹幕的内容
+    if (!text || text.length === 0) return false;
+
+    // 过滤掉太短的文本（可能是UI元素）
+    if (text.length < 2) return false;
+
+    // 过滤掉某些特定的关键词
+    const blacklist = [
+      '字体', '样式', 'font', 'style', 'css',
+      '脚本', 'script', '代码', 'code',
+      '推荐', '频道', '分类', '标签',
+      '搜索', '历史', '收藏', '设置'
+    ];
+
+    for (let word of blacklist) {
+      if (text.includes(word)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function shouldSpeak(text) {
