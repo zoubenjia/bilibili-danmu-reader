@@ -134,14 +134,17 @@
   }
 
   function getDanmuElements() {
+    // 检测是否在直播页面
+    const isLive = window.location.href.includes('live.bilibili.com');
+
     const selectors = [
       '.bili-danmaku-x-dm',
       '.bili-live-chat-item',
       '.danmaku-item',
       '.bili-danmaku-item',
-      'li[class*="item"]',        // 支持某些直播间的li标签结构
+      isLive ? 'li[class*="item"]' : null,  // 仅在直播页面使用li选择器
       '[class*="danmaku"]',
-    ];
+    ].filter(Boolean);  // 移除null值
 
     for (let selector of selectors) {
       let elements = document.querySelectorAll(selector);
